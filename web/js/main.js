@@ -71,8 +71,8 @@
                 // initialize the game
                 console.log('grid size is ' + String(game_msg['grid_size']));
                 grid_size = game_msg['grid_size'];
-                scale_factor_x = canvas.width / grid_size;
-                scale_factor_y = canvas.height / grid_size;
+                scale_factor_x = (canvas.width - shuttle_size)/ grid_size;
+                scale_factor_y = (canvas.height - shuttle_size)/ grid_size;
                 console.log('player names are:' + String(game_msg['player_names']));
                 for (var i=0; i<game_msg['player_names'].length; i++) {
                     var shuttle = {};
@@ -89,11 +89,11 @@
                 // update shuttle and rocket position and adapt to fit the canvas size
                 for (var i=0; i<game_msg['shuttles'].length; i++) {
                     var shuttle = game_msg['shuttles'][i];
-                    shuttles[i].x = shuttle_size + shuttle.x * scale_factor_x - 2*shuttle_size;
+                    shuttles[i].x =  shuttle.x * scale_factor_x
                     shuttles[i].y = canvas.height - (shuttle.y * scale_factor_y + shuttle_size);
                     if (shuttle.hasOwnProperty('rocket')) {
-                        shuttles[i].rocket = {'x': rocket_size + shuttle.rocket.x * scale_factor_x - 2*rocket_size,
-                                          'y': canvas.height - (shuttle.rocket.y * scale_factor_y)};
+                        shuttles[i].rocket = {'x': shuttle.rocket.x * scale_factor_x,
+                                          'y': canvas.height - (shuttle.rocket.y * scale_factor_y + shuttle_size)};
                     }
                 }
             } else if(game_msg['type'] === 'end') {
