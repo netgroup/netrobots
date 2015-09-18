@@ -1,9 +1,10 @@
 (function() {
-    var canvas_size = 600, 
-        shuttle_size = 32,
+    var shuttle_size = 32,
         rocket_size = 32,
-        scale_factor,
-        grid_size;
+        scale_factor_x,
+        scale_factor_y,
+        grid_size,
+        winner;
 
     var game_over = false, game_started = false;
     var shuttles = [], 
@@ -11,6 +12,8 @@
 
     var socket = null;
     var isopen = false;
+
+    var player_colors = ['red', 'green', 'blue', 'yellow'];
 
     var server_ip  = "127.0.0.1";
     var server_port = "9000";
@@ -21,8 +24,8 @@
     var then = Date.now();
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
-    canvas.width = canvas_size;
-    canvas.height = canvas_size;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
     document.body.appendChild(canvas);
 
 
@@ -68,13 +71,15 @@
                 // initialize the game
                 console.log('grid size is ' + String(game_msg['grid_size']));
                 grid_size = game_msg['grid_size'];
-                scale_factor = canvas_size / grid_size;
+                scale_factor_x = canvas.width / grid_size;
+                scale_factor_y = canvas.height / grid_size;
                 console.log('player names are:' + String(game_msg['player_names']));
                 for (var i=0; i<game_msg['player_names'].length; i++) {
                     var shuttle = {};
                     shuttle.name = game_msg['player_names'][i];
                     shuttle.x = 0; 
                     shuttle.y = 0; 
+                    shuttle.color = player_colors.shift();
                     shuttle.image = shuttleImage;
                     shuttle.rocket = null;
                     shuttles.push(shuttle);
@@ -84,13 +89,15 @@
                 // update shuttle and rocket position and adapt to fit the canvas size
                 for (var i=0; i<game_msg['shuttles'].length; i++) {
                     var shuttle = game_msg['shuttles'][i];
-                    shuttles[i].x = shuttle_size + shuttle.x * scale_factor - 2*shuttle_size;
-                    shuttles[i].y = shuttle_size + shuttle.y * scale_factor - 2*shuttle_size;
+                    shuttles[i].x = shuttle_size + shuttle.x * scale_factor_x - 2*shuttle_size;
+                    shuttles[i].y = canvas.height - (shuttle.y * scale_factor_y + shuttle_size);
                     if (shuttle.hasOwnProperty('rocket')) {
-                        shuttle.rocket = {'x': rocket_size + shuttle.rocket.x * scale_factor - 2*rocket_size,
-                                          'y': rocket_size + shuttle.rocket.y * scale_factor - 2*rocket_size};
+                        shuttles[i].rocket = {'x': rocket_size + shuttle.rocket.x * scale_factor_x - 2*rocket_size,
+                                          'y': canvas.height - (shuttle.rocket.y * scale_factor_y)};
                     }
                 }
+            } else if(game_msg['type'] === 'end') {
+                winner = game_msg['winner'];
             }
         };
 
@@ -105,16 +112,32 @@
     var render = function () {
         // draw the bg
         ctx.drawImage(bgImage, 0, 0);
+
+        if (winner) {
+            ctx.font="80px Georgia";
+            ctx.fillStyle = "red";
+            ctx.textAlign = "center";
+            ctx.fillText("The winner is " + winner, canvas.width/2, canvas.height /2);
+            return;
+        }
+
         // then draw the shuttles
         for (var i=0; i<shuttles.length; i++) {
             ctx.drawImage(shuttles[i].image, shuttles[i].x, shuttles[i].y);
             ctx.font="20px Georgia";
-            ctx.fillStyle = "red";
+            ctx.fillStyle = shuttles[i].color;
             ctx.textAlign = "center";
             ctx.fillText(shuttles[i].name, shuttles[i].x + 10 + shuttle_size , shuttles[i].y);
 
             if (shuttles[i].rocket) {
-                ctx.drawImage(shuttles[i].rocketImage, shuttles[i].rocket.x, shuttles[i].rocket.y);
+                //ctx.drawImage(rocketImage, shuttles[i].rocket.x, shuttles[i].rocket.y);
+                //draw a circle
+                ctx.beginPath();
+                ctx.arc(shuttles[i].rocket.x, shuttles[i].rocket.y, 10, 0, Math.PI*2, true); 
+                ctx.fillStyle = shuttles[i].color;
+                ctx.fill();
+                ctx.closePath();
+                ctx.fill();
             }
         }
         // the server will check for collisions

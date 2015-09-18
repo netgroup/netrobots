@@ -19,6 +19,9 @@ class Rocket:
                 /_/
 
     """
+
+    COLLISION_RANGE = 10
+
     def __init__(self, x, y, angle):
         self.x = x
         self.y = y
@@ -27,6 +30,21 @@ class Rocket:
     def move(self):
         self.x = self.x + math.sin(math.radians(self.angle))
         self.y = self.y + math.cos(math.radians(self.angle))
+        print "Moving rocket to ", self.x, " ", self.y
+        
+    def isOut(self):
+        return self.rocket.x == self.rocket.grid_size or \
+            self.rocket.x == 0 or \
+            self.rocket.y == self.grid_size or \
+            self.rocket.y == 0
+
+    def collide(self, x, y):
+        if abs(x - self.x) < self.COLLISION_RANGE and abs(y - self.y) < self.COLLISION_RANGE:
+            return True
+        else:
+            return False
+
+
 
 
 class Shuttle:
@@ -36,7 +54,7 @@ class Shuttle:
         =[+--,-------'
          [|_/""        
     """
-    ROCKET_TIME = 10 # how many turns we need to wait for the next rocket launch
+
     def __init__(self, protocol, name, grid_size):
         self.is_alive = True
         self.protocol = protocol
@@ -45,12 +63,13 @@ class Shuttle:
         self.x = random.randint(0, grid_size)
         self.y = random.randint(0, grid_size)
         self.rocket = None
-        self.timeToNextRocket = 0
 
     def sendRocket(self, angle):
-        if self.timeToNextRocket == 0:
+        if not self.rocket:
             self.rocket = Rocket(self.x, self.y, angle)
-            self.timeToNextRocket = self.ROCKET_TIME
+
+    def canFire(self):
+        return not self.rocket
 
 
     def move(self, direction):
@@ -77,7 +96,7 @@ class Shuttle:
 
 class Game:
     # settings
-    NUMBER_OF_PLAYER = 1 #how many player we need to wait before starting the game?
+    NUMBER_OF_PLAYER = 2 #how many player we need to wait before starting the game?
     GRID_SIZE = 300 # the grid is a square GRID_SIZE X GRID_SIZE
 
     # interal variables
@@ -87,6 +106,7 @@ class Game:
 
     status = GAME_WAIT_FOR_PLAYERS
     players = []
+    winner = None
 
 
     def addPlayer(self, protocol, name):
@@ -94,14 +114,6 @@ class Game:
         self.players.append(shuttle)
         if len(self.players) == self.NUMBER_OF_PLAYER:
             self.start()
-        
-    #def onPlayerAbandon(protocol):
-    #    i = 0
-    #    for p in self.players:
-    #        if p.protocol == protocol:
-    #            del self.players[i]
-    #        i += 1
-
 
     def start(self):
         print "Game is started!"
@@ -120,7 +132,6 @@ class Game:
 
 
     def onEverybodyAnswered(self):
-        time.sleep(0.5)
         for player in self.players:
             players.protocol.ask_for_actions()
 
@@ -134,24 +145,35 @@ class Game:
         """
         # -- move rockets
         # -- check for collision
-        time.sleep(1)
+        time.sleep(0.01)
         alive_players = 0
+        for p in self.players:
+            if p.is_alive and p.rocket:
+                p.rocket.move()
+                for o in self.players:
+                    if p != o and p.rocket.collide(o.x, o.y):
+                        print "Player " + p.name + " kills " + o.name
+                        o.die("you have been killed by " + p.name)
+                if p.rocket.x > self.GRID_SIZE or p.rocket.x < 0 or \
+                    p.rocket.y > self.GRID_SIZE or p.rocket.y < 0:
+                    del p.rocket
+                    p.rocket = None
+
         for p in self.players:
             if p.is_alive:
                 alive_players += 1
-            if p.rocket:
-                p.move()
-                if p.rocket.x > self.grid_size or p.rocket.x < 0 or \
-                    p.rocket.y > self.grid_size or p.rocket.y < 0:
-                    del p.rocket
-                    p.rocket = None
-        #if alive_players == 1:
-        #    print "Only one player, it wins"
-        #elif alive_players == 0:
-        #    print "no one survived!"
-        #else:
-        for p in self.players:
-            p.protocol.ask_for_actions()
+
+        if alive_players == 1:
+            print "Only one player, it wins"
+            for p in self.players:
+                if p.is_alive:
+                    self.winner = p.name
+                    p.die("You win!")
+        elif alive_players == 0:
+            print "no one survived!"
+        else:
+            for p in self.players:
+                p.protocol.ask_for_actions()
 
 
 
@@ -171,7 +193,7 @@ class Game:
         """
         Return the game status to the clients. 
         The format is:
-        NUMBER_OF_SPACESHIPS X1 Y1 X2 Y2 X3 Y3 ... NUMBER_OF_ROCKETS X1 Y1 A1 X2 Y2 A2 ...
+        CAN_FIRE NUMBER_OF_SPACESHIPS X1 Y1 X2 Y2 X3 Y3 ... NUMBER_OF_ROCKETS X1 Y1 A1 X2 Y2 A2 ...
         We are the first spaceship!
         """
 
@@ -189,11 +211,13 @@ class Game:
                     positions.append(p.x)
                     positions.append(p.y)
                 if p.rocket:
-                    rockets.append(math.round(p.rocket.x))
-                    rockets.append(math.round(p.rocket.y))
+                    rockets.append(round(p.rocket.x))
+                    rockets.append(round(p.rocket.y))
                     rockets.append(p.rocket.angle)
 
-        game_status = str(alive_players) + " " + " ".join(str(x) for x in positions) + \
+        game_status = str(int(self.getShuttle(protocol).canFire())) + " " +  \
+            str(alive_players) + " " + \
+            " ".join(str(x) for x in positions) + \
             " " + " ".join(str(x) for x in rockets)
 
         return game_status

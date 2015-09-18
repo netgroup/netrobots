@@ -35,7 +35,7 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
         self.transport.setTcpNoDelay(True)
 
         # ask for the player name
-        self.message(self.request_code['NAME'])
+        self.message(self.request_code['NAME'] + " " + str(self.factory.game.GRID_SIZE))
         self.hasPendingMessage = True
 
     def connectionLost(self, reason):

@@ -54,11 +54,19 @@ class WebInterfaceProtocol(WebSocketServerProtocol):
 
     def getGameStatus(self):
         shuttles = []
+
+        if self.factory.game.winner:
+            game_end = {
+                "type": "end",
+                "winner": self.factory.game.winner
+            }
+            return json.dumps(game_end)
+
         for p in self.factory.game.players:
             if p.is_alive:
                 shuttle = {'name': p.name, 'x': p.x, 'y': p.y}
                 if p.rocket:
-                    shuttle['rocket'] = {'x': math.round(p.rocket.x), 'y': math.round(p.rocket.y), 'angle': p.rocket.angle}
+                    shuttle['rocket'] = {'x': round(p.rocket.x), 'y': round(p.rocket.y), 'angle': p.rocket.angle}
                 shuttles.append(shuttle)
 
         game_status = {

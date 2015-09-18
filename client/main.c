@@ -22,6 +22,54 @@
 
 int arena_size;
 
+
+void get_action(char *status, char *my_action) {
+    static char my_dir = 'u';
+    char dirs[] = {'u', 'd', 'l', 'r'};
+    int reach_border,
+        can_fire,
+        shuttle_n,
+        x,
+        y;
+    float random_angle = 0.0;
+    sscanf(status, "%d %d %d %d", &can_fire, &shuttle_n, &x, &y);
+
+
+    if (can_fire) {
+        random_angle = (rand() % 36000);
+        random_angle /= 100;
+        sprintf(my_action, "f %f", random_angle);
+        return;
+    }
+
+    switch (my_dir) {
+        case 'u':
+            reach_border = (y == arena_size);
+            break;
+        case 'd':
+            reach_border = (y == 0);
+            break;
+        case 'l':
+            reach_border = (x == 0);
+            break;
+        case 'r':
+            reach_border = (x == arena_size);
+            break;
+    }
+
+    printf("reach_border is %d\n", reach_border);
+    printf("x is %d\n", x);
+    printf("y is %d\n", y);
+    printf("arena_size is %d\n", arena_size);
+    printf("(y == arena_size) is %d\n", (y == arena_size));
+
+    if (reach_border) {
+        my_dir = dirs[rand()%4];
+    } 
+    sprintf(my_action, "m %c", my_dir);
+}
+
+
 // TODO add comments
 int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
 
@@ -40,7 +88,8 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
             strcpy(sendline, "n lorenzo");
             // it give us the dimension of the arena expressed in number of tiles
             // of each edge of the square area.
-            sscanf(recvline[1], "%d", &arena_size);
+            sscanf(&recvline[2], "%d", &arena_size);
+            printf("Arena size is %d\n", arena_size);
             // arena is a square arena_size X arena_size
             break;
         case REQUEST_ACTION:
@@ -52,7 +101,7 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
 
             // TODO Add if I can fire a rocket
             // the format is
-            // NUMBER_OF_SPACESHIPS X1 Y1 X2 Y2 X3 Y3 ... NUMBER_OF_ROCKETS X1 Y1 A1 X2 Y2 A2 ...
+            // CAN_FIRE NUMBER_OF_SPACESHIPS X1 Y1 X2 Y2 X3 Y3 ... NUMBER_OF_ROCKETS X1 Y1 A1 X2 Y2 A2 ...
             // e.g. 3 120 234 45 87 98 67 1 10 100 282.23
             // there are three shuttles. We are at coords (120, 234), there is a rocket at (10, 100)
 
@@ -60,7 +109,8 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
             // we can decide where to move
             // we can move up (u), down (d), left (l) or right (r)
             // just answer "m u" to go up or "m l" to go left
-            strcpy(sendline, "m u");
+            
+            get_action(&recvline[2], sendline);
 
             // alternatively, we can also decide to fire
             // syntax is f ANGLE where angle is a float
@@ -69,7 +119,7 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
 
 
     }
-    strcat(sendline, '\r\n'); //add endline
+    strcat(sendline, "\r\n"); //add endline
     sent_bytes = send(sockfd, sendline, strlen(sendline), 0); //send to the server
     printf("Sent %d bytes\n", sent_bytes);
 
