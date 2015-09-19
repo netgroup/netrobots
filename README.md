@@ -10,5 +10,5 @@ Each player construct his own shuttle and decide where to go sending to the serv
 
 Last shuttle survived is the winner.
 
-![alt tag](https://raw.githubusercontent.com/netgroup/netrobots/master/server/screenshot.png)
+![alt tag](https://raw.githubusercontent.com/netgroup/netrobots/master/screenshot.png)
 
