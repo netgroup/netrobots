@@ -23,53 +23,6 @@
 
 int arena_size;
 
-void get_action(char *status, char *my_action) {
-
-    static char my_dir = 'u';
-    char dirs[] = {'u', 'd', 'l', 'r'};
-    int reach_border,
-        can_fire,
-        shuttle_n,
-        x,
-        y;
-    float random_angle = 0.0;
-    sscanf(status, "%d %d %d %d", &can_fire, &shuttle_n, &x, &y);
-
-
-    if (can_fire) {
-        random_angle = (rand() % 36000);
-        random_angle /= 100;
-        sprintf(my_action, "f %f", random_angle);
-        return;
-    }
-
-    switch (my_dir) {
-        case 'u':
-            reach_border = (y == arena_size);
-            break;
-        case 'd':
-            reach_border = (y == 0);
-            break;
-        case 'l':
-            reach_border = (x == 0);
-            break;
-        case 'r':
-            reach_border = (x == arena_size);
-            break;
-    }
-
-    printf("reach_border is %d\n", reach_border);
-    printf("x is %d\n", x);
-    printf("y is %d\n", y);
-    printf("arena_size is %d\n", arena_size);
-
-    if (reach_border) {
-        // here we check if we reach the border
-        my_dir = dirs[rand()%4];
-    } 
-    sprintf(my_action, "m %c", my_dir);
-}
-
 
 int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
 
@@ -85,11 +38,11 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
             // server ask for our name
             // answer "n YOURNAME\"
             printf("Server ask for my name...\n");
-            strcpy(sendline, "n lorenzo");
-            // it give us the dimension of the arena expressed in number of tiles
+            // write in sendline a string such "n YOUR_NAME"
+            
+            // record the the dimension of the arena expressed in number of tiles
             // of each edge of the square area.
-            sscanf(&recvline[2], "%d", &arena_size);
-            printf("Arena size is %d\n", arena_size);
+            // parse an int from &recvline[2]
             // arena is a square arena_size X arena_size
             break;
         case REQUEST_ACTION:
@@ -112,11 +65,9 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
             
             // alternatively, we can also decide to fire
             // syntax is f ANGLE where angle is a float
-            //sprintf(sendline, "f %f", 271.32);
+            // sprintf(sendline, "f %f", 271.32);
 
-            
-            get_action(&recvline[2], sendline);
-
+            // parse &recvline[2] and write your response in sendline
 
             break;
 

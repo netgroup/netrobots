@@ -18,6 +18,8 @@
     var server_ip  = "127.0.0.1";
     var server_port = "9000";
 
+    var audio_laser = new Audio('sound/laser.wav');
+
 
 
     // Set up the canvas for the arena
@@ -45,12 +47,12 @@
     shuttleImage.src = "img/shuttle.png";
 
     // Rocket image
-    var rocketReady = false;
-    var rocketImage = new Image();
-    rocketImage.onload = function () {
-     rocketReady = true;
-    };
-    rocketImage.src = "img/rocket.png";
+    //var rocketReady = false;
+    //var rocketImage = new Image();
+    //rocketImage.onload = function () {
+    // rocketReady = true;
+    //};
+    //rocketImage.src = "img/rocket.png";
 
     window.onload = function() {
 
@@ -92,9 +94,21 @@
                     shuttles[i].x =  shuttle.x * scale_factor_x
                     shuttles[i].y = canvas.height - (shuttle.y * scale_factor_y + shuttle_size);
                     if (shuttle.hasOwnProperty('rocket')) {
-                        shuttles[i].rocket = {'x': shuttle.rocket.x * scale_factor_x,
-                                          'y': canvas.height - (shuttle.rocket.y * scale_factor_y + shuttle_size)};
+                    	var rocket_x = shuttle.rocket.x * scale_factor_x;
+                    	var rocket_y = canvas.height - (shuttle.rocket.y * scale_factor_y + shuttle_size);
+
+                    	if (!shuttles[i].rocket || 
+                    		(shuttles[i].rocket.x - rocket_x) >  scale_factor_x * 5 || 
+                    		(shuttles[i].rocket.y - rocket_y) > scale_factor_y * 5
+                    		) {
+                    		// new rocket is fired
+                    		audio_laser.play();
+
+                    	}
+                        shuttles[i].rocket = {'x': rocket_x,
+                                          'y': rocket_y};
                     }
+
                 }
             } else if(game_msg['type'] === 'end') {
                 winner = game_msg['winner'];

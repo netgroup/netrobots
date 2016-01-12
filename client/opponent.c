@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #define MAX_TX_BUF 1500
 #define MAX_RX_BUF 1500
 
@@ -23,8 +22,8 @@
 
 int arena_size;
 
-void get_action(char *status, char *my_action) {
 
+void get_action(char *status, char *my_action) {
     static char my_dir = 'u';
     char dirs[] = {'u', 'd', 'l', 'r'};
     int reach_border,
@@ -62,15 +61,16 @@ void get_action(char *status, char *my_action) {
     printf("x is %d\n", x);
     printf("y is %d\n", y);
     printf("arena_size is %d\n", arena_size);
+    printf("(y == arena_size) is %d\n", (y == arena_size));
 
     if (reach_border) {
-        // here we check if we reach the border
         my_dir = dirs[rand()%4];
     } 
     sprintf(my_action, "m %c", my_dir);
 }
 
 
+// TODO add comments
 int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
 
     char sendline[MAX_TX_BUF];
@@ -85,7 +85,7 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
             // server ask for our name
             // answer "n YOURNAME\"
             printf("Server ask for my name...\n");
-            strcpy(sendline, "n lorenzo");
+            strcpy(sendline, "n alien");
             // it give us the dimension of the arena expressed in number of tiles
             // of each edge of the square area.
             sscanf(&recvline[2], "%d", &arena_size);
@@ -95,29 +95,26 @@ int handle_msg(char recvline[MAX_RX_BUF], int sockfd) {
         case REQUEST_ACTION:
             
             printf("Server ask for action...\n");
-            printf("Received from server: %s\n", recvline);
             // for our convenience, the server send us the positions of other shuttles
             // in the list we are the first one
             // it send to us also the position of rockets sent by other spacecraft
 
+            // TODO Add if I can fire a rocket
             // the format is
             // CAN_FIRE NUMBER_OF_SPACESHIPS X1 Y1 X2 Y2 X3 Y3 ... NUMBER_OF_ROCKETS X1 Y1 A1 X2 Y2 A2 ...
-            // e.g. 0 3 120 234 45 87 98 67 1 10 100 282.23
-            // You can not fire, there are three shuttles. We are at coords (120, 234), there is a rocket at (10, 100)
+            // e.g. 3 120 234 45 87 98 67 1 10 100 282.23
+            // there are three shuttles. We are at coords (120, 234), there is a rocket at (10, 100)
 
 
             // we can decide where to move
             // we can move up (u), down (d), left (l) or right (r)
             // just answer "m u" to go up or "m l" to go left
             
+            get_action(&recvline[2], sendline);
+
             // alternatively, we can also decide to fire
             // syntax is f ANGLE where angle is a float
             //sprintf(sendline, "f %f", 271.32);
-
-            
-            get_action(&recvline[2], sendline);
-
-
             break;
 
 

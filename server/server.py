@@ -4,7 +4,7 @@
 """
 A game server for C "robot war" like game.
 
-This server allow C programs to connect and pilot space shuttles that can move inside an arena. 
+This server allows C programs to connect and pilot space shuttles that can move inside an arena. 
 Shuttles can fire to other shuttles. Last one wins.
 This server communicate via websocket with a web page, showing what is going on.
 
