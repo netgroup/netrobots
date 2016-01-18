@@ -198,6 +198,7 @@ class Game:
         """
 
         alive_players = 0
+        alive_rockets = 0
         positions = []
         rockets = []
 
@@ -211,14 +212,16 @@ class Game:
                     positions.append(p.x)
                     positions.append(p.y)
                 if p.rocket:
-                    rockets.append(round(p.rocket.x))
-                    rockets.append(round(p.rocket.y))
+                    alive_rockets += 1
+                    rockets.append(int(round(p.rocket.x)))
+                    rockets.append(int(round(p.rocket.y)))
                     rockets.append(p.rocket.angle)
 
         game_status = str(int(self.getShuttle(protocol).canFire())) + " " +  \
             str(alive_players) + " " + \
-            " ".join(str(x) for x in positions) + \
-            " " + " ".join(str(x) for x in rockets)
+            " ".join(str(x) for x in positions) + " " +\
+            str(alive_rockets) + " " +\
+            " ".join(str(x) for x in rockets)
 
         return game_status
 
