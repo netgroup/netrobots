@@ -28,8 +28,8 @@ class Rocket:
         self.angle = angle
 
     def move(self):
-        self.x = self.x + math.sin(math.radians(self.angle))
-        self.y = self.y + math.cos(math.radians(self.angle))
+        self.x = self.x + math.cos(math.radians(self.angle))
+        self.y = self.y + math.sin(math.radians(self.angle))
         print "Moving rocket to ", self.x, " ", self.y
         
     def isOut(self):
