@@ -26,9 +26,13 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
             }
     RESPONDING_TIMEOUT = 10 #seconds
     hasPendingMessage = False
+    name = ''
 
     def log(self, what):
-        print self.name, ": ", what
+        if self.name:
+            print self.name, ": ", what
+        else:
+            print "Unknown client", ": ", what
     
     def connectionMade(self):
         print "Got new client!"
@@ -48,12 +52,16 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
 
 
     def lineReceived(self, line):
+        line= unicode(line, errors='ignore')
         print "Line received", line
-        code = line[0]
-        payload = line[2:]
+        if len(line) < 3:
+            self.log("message received is too short: " + line)
+            return
         if not self.hasPendingMessage:
             self.log("spurious response: " + line)
             return
+        code = line[0]
+        payload = line[2:]
         self.hasPendingMessage = False
         #self.resetTimeout()
         self.setTimeout(None) 
@@ -61,17 +69,29 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
         # decode the protocol response
         if code == self.response_code['NAME']:
             self.name = payload
+            if len(payload) < 1:
+                self.log("received empty player name: {}".format(payload))
+                return
             self.log("Received client name: " + payload)
             self.factory.game.addPlayer(self, payload)
-
         elif code == self.response_code['MOVE']:
             self.log("moving " + payload)
+            if not (len(payload) == 1 and payload in 'udlr'):
+                self.log("received wrong move direction: {}".format(payload))
+                return
             self.factory.game.getShuttle(self).move(payload)
-            
         elif code == self.response_code['FIRE']:
             # do the fire action 
-            self.factory.game.getShuttle(self).sendRocket(float(payload))
+            try:
+                angle = float(payload)
+            except:
+                self.log("angle is not a valid float {}".format(payload))
+                return 
+            if angle <0 or angle > 360:
+                self.log("angle is not valid {}".format(angle))
+                return
 
+            self.factory.game.getShuttle(self).sendRocket(float(payload))
         else:
             self.log("Received an unknown code from the client: " + payload)
 
@@ -81,10 +101,11 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
             self.factory.game.update()
 
     def sendQuit(self, reason):
-        self.message(self.request_code['QUIT'] + " " + reason)
+        self.message(self.request_code['QUIT'] + " " + reason )
         self.transport.loseConnection()
 
     def message(self, message):
+        message = message.encode('ascii', 'ignore')
         "sending message: ", message
         self.transport.write(message + '\n')
 
