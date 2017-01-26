@@ -49,6 +49,7 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
         if shuttle and shuttle.is_alive:
             # if the shuttle already entered in the game (i.e. gave at least its name)
             shuttle.die('connection lost')
+        self.factory.game.rmPlayer(self)
 
 
     def lineReceived(self, line):
@@ -112,8 +113,12 @@ class PlayerProtocol(basic.LineReceiver, TimeoutMixin):
 
     def timeoutConnection(self):
         print "Timeout"
-        self.transport.abortConnection()
-        self.factory.game.getShuttle(self).die('timeout')
+        try:
+            self.transport.abortConnection()
+            self.factory.game.getShuttle(self).die('timeout')
+            self.factory.game.rmPlayer(self)
+        except:
+            pass
 
 
     def ask_for_actions(self):

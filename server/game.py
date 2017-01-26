@@ -112,8 +112,19 @@ class Game:
     def addPlayer(self, protocol, name):
         shuttle = Shuttle(protocol, name, self.GRID_SIZE)
         self.players.append(shuttle)
+        print "player added! len is ", len(self.players)
         if len(self.players) == self.NUMBER_OF_PLAYER:
             self.start()
+
+    def rmPlayer(self, protocol): 
+        i = 0
+        for p in self.players:
+            if p.protocol == protocol:
+                del self.players[i]
+                print "player removed, len is ", len(self.players)
+                break 
+            else:
+                i += 1
 
     def start(self):
         print "Game is started!"
@@ -137,7 +148,9 @@ class Game:
 
 
     def end(self):
-        self.status = GAME_OVER
+        import sys
+        self.status = self.GAME_OVER
+        print("game is terminated")
 
     def update(self):
         """
@@ -169,8 +182,10 @@ class Game:
                 if p.is_alive:
                     self.winner = p.name
                     p.die("You win!")
+            self.end()
         elif alive_players == 0:
             print "no one survived!"
+            self.end()
         else:
             for p in self.players:
                 p.protocol.ask_for_actions()
